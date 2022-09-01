@@ -1,0 +1,47 @@
+{
+  "app": "npx ts-node --prefer-ts-exts src/coder-api.ts",
+  "watch": {
+    "include": [
+      "src/**/*.ts",
+      "test/**/*.ts"
+    ],
+    "exclude": [
+      "README.md",
+      "cdk*.json",
+      "**/*.d.ts",
+      "**/*.js",
+      "tsconfig.json",
+      "package*.json",
+      "yarn.lock",
+      "node_modules",
+      "test"
+    ]
+  },
+  "context": {
+    "api-gateway-config": {
+      "postalcode": {
+        "arn": "arn:aws:lambda:us-east-1:594172205456:function:CoderApiStack-postalCodeFunction",
+        "integrationType": "AWS_PROXY",
+        "resources": [
+          {
+            "uri": "postalcode",
+            "proxy": true,
+            "anyMethodOptions": {
+              "authorizationType": "NONE",
+              "requestParameters": {
+                "method.request.header.Authorization": true
+              }
+            },
+            "proxyMethodOptions": {
+              "authorizationType": "NONE",
+              "requestParameters": {
+                "method.request.path.proxy": true,
+                "method.request.header.Authorization": true
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
