@@ -13,10 +13,11 @@ import {
   // ARecord,
   // CnameRecord,
   // CrossAccountZoneDelegationRecord,
+  HostedZone,
   PublicHostedZone,
   // RecordTarget
 } from 'aws-cdk-lib/aws-route53'
-import { DnsValidatedCertificate } from 'aws-cdk-lib/aws-certificatemanager'
+import { DnsValidatedCertificate, Certificate } from 'aws-cdk-lib/aws-certificatemanager'
 import { AccountPrincipal } from 'aws-cdk-lib/aws-iam'
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs'
 
@@ -32,56 +33,41 @@ export class CoderApiStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props)
 
-    // const parentHostedZoneName = process.env.PARENT_HOSTED_ZONE as string
-    // const mainHostedZoneName = process.env.MAIN_HOSTED_ZONE as string
+    const hostedZoneName = process.env.DOMAIN_NAME as string
 
-    // const mainZone = new PublicHostedZone(this, 'HostedZone', {
-    //   zoneName: mainHostedZoneName,
-    //   comment: 'This hosted zone is created for the Coder API'
-    // })
-
-    // mainZone.applyRemovalPolicy(cdk.RemovalPolicy.DESTROY)
-    
-    // const parentZone = new PublicHostedZone(this, 'MainHostedZone', {
-    //   zoneName: parentHostedZoneName,
-    //   comment: 'This hosted zone is created for the Coder API Proxy POC'
+    const currentDate = new Date()
+    // const zone = new PublicHostedZone(this, 'HostedZone', {
+    //   zoneName: hostedZoneName,
+    //   comment: `This hosted zone is created for the Coder API ${currentDate.toISOString()}`
     // })
     
-    // parentZone.applyRemovalPolicy(cdk.RemovalPolicy.DESTROY)
-
-    // const mainAcmCertificate = new DnsValidatedCertificate(
-    //     this,
-    //     'MainRegionCertificate',
-    //     {
-    //       domainName: mainHostedZoneName,
-    //       hostedZone: mainZone,
-    //       region: 'us-east-1'
-    //     }
-    //   )
-
-    // const mainDomainName = new DomainName(this, 'MainDomainName', {
-    //     domainName: mainZone.zoneName,
-    //     certificate: mainAcmCertificate,
-    //     endpointType: EndpointType.EDGE, // default is REGIONAL
-    //     securityPolicy: SecurityPolicy.TLS_1_2
-    //   })
+    const zone = new HostedZone(this, 'HostedZone', {
+      zoneName: hostedZoneName,
+      comment: `This hosted zone is created for the Coder API ${currentDate.toISOString()}`
+    })
+    
+    zone.applyRemovalPolicy(cdk.RemovalPolicy.DESTROY)
 
     // const acmCertificate = new DnsValidatedCertificate(
     //   this,
-    //   'CrossRegionCertificate',
+    //   'DomainCertificate',
     //   {
-    //     domainName: parentHostedZoneName,
-    //     hostedZone: parentZone,
-    //     region: process.env.CDK_DEFAULT_REGION
+    //     domainName: hostedZoneName,
+    //     hostedZone: zone,
+    //     region: 'us-east-1'
     //   }
     // )
+    const acmCertificate = Certificate.fromCertificateArn(this, 'Certificate', 'arn:aws:acm:us-east-1:594172205456:certificate/250f3052-7def-4361-825e-29b4b9630f2e');
 
-    // const domainName = new DomainName(this, 'DomainName', {
-    //   domainName: parentZone.zoneName,
-    //   certificate: acmCertificate,
-    //   endpointType: EndpointType.EDGE, // default is REGIONAL
-    //   securityPolicy: SecurityPolicy.TLS_1_2
-    // })
+
+    // acmCertificate.applyRemovalPolicy(cdk.RemovalPolicy.DESTROY)
+
+    const domainName = new DomainName(this, 'DomainName', {
+      domainName: zone.zoneName,
+      certificate: acmCertificate,
+      endpointType: EndpointType.EDGE, // default is REGIONAL
+      securityPolicy: SecurityPolicy.TLS_1_2
+    })
 
     //   // configure log retention
     let accessLogRetention!: RetentionDays
@@ -104,8 +90,7 @@ export class CoderApiStack extends cdk.Stack {
 
     const coderAPI = new CoderAPIRestApi(this, 'coder-API', {
       logGroup: coderAPILogGroup,
-      // domainName: domainName,
-      // mainDomainName: mainDomainName
+      domainName: domainName
     })
 
     new LambdaFunctions(this, {

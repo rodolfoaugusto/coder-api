@@ -24,8 +24,7 @@ import {
 
 export interface CoderAPIProperties {
   readonly logGroup: LogGroup
-  // readonly domainName: DomainName
-  // readonly mainDomainName?: DomainName
+  readonly domainName: DomainName
 }
 
 export interface ResourcesByService {
@@ -38,8 +37,7 @@ export class CoderAPIRestApi extends RestApi {
 
   constructor(scope: Construct, id: string, props: CoderAPIProperties) {
     const { logGroup, 
-      // domainName,
-      // mainDomainName 
+      domainName
     } = props
 
     super(scope, id, {
@@ -63,12 +61,8 @@ export class CoderAPIRestApi extends RestApi {
     })
 
     // Domain Name API Mapping
-    // domainName?.addBasePathMapping(this, { basePath: 'prod' })
-
-    // MainDomain Name API Mapping
-    // mainDomainName?.addBasePathMapping(this, { basePath: 'prod' })
+    domainName?.addBasePathMapping(this, { basePath: 'prod' })
     
-
     // Redirect Page
     this.root.addMethod('ANY', devHubMockIntegration, devHubMethodOptions)
 
